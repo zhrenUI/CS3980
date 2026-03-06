@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>US Population Data</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --border: #d9dee8;
+      --header: #f3f6fb;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --bg: #ffffff;
+      --shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: #f7f9fc;
+      color: var(--text);
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 40px auto;
+      padding: 0 20px;
+    }
+
+    .card {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .header {
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .header h1 {
+      margin: 0 0 6px;
+      font-size: 1.6rem;
+    }
+
+    .header p {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .status {
+      padding: 16px 24px;
+      font-size: 0.95rem;
+      color: var(--muted);
+    }
+
+    .error {
+      color: #b91c1c;
+      font-weight: bold;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    thead th {
+      text-align: left;
+      background: var(--header);
+      padding: 14px 24px;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.95rem;
+    }
+
+    tbody td {
+      padding: 14px 24px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    tbody tr:hover {
+      background: #fafcff;
+    }
+
+    .right {
+      text-align: right;
+    }
+
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <div class="header">
+        <h1>US Population by Year</h1>
+        <p>Data retrieved from the Data USA API</p>
+      </div>
+
+      <div id="status" class="status">Loading population data...</div>
+
+      <table id="populationTable" class="hidden">
+        <thead>
+          <tr>
+            <th>Year</th>
+            <th class="right">Population</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      'use strict';
+
+      var API_URL = 'https://api.datausa.io/tesseract/data.jsonrecords?cube=acs_yg_total_population_5&measures=Population&drilldowns=Year';
+      var statusEl = document.getElementById('status');
+      var tableEl = document.getElementById('populationTable');
+      var tableBodyEl = document.getElementById('tableBody');
+
+      function formatNumber(value) {
+        return Number(value).toLocaleString('en-US');
+      }
+
+      function renderTable(rows) {
+        var html = '';
+
+        rows.forEach(function (row) {
+          html += '<tr>' +
+                    '<td>' + row.Year + '</td>' +
+                    '<td class="right">' + formatNumber(row.Population) + '</td>' +
+                  '</tr>';
+        });
+
+        tableBodyEl.innerHTML = html;
+        statusEl.classList.add('hidden');
+        tableEl.classList.remove('hidden');
+      }
+
+      function showError(message) {
+        statusEl.textContent = message;
+        statusEl.classList.add('error');
+      }
+
+      function fetchPopulationData() {
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', API_URL, true);
+        xhr.responseType = 'json';
+
+        xhr.onload = function () {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            var response = xhr.response;
+
+            if (!response || !response.data || !Array.isArray(response.data)) {
+              showError('Unexpected API response format.');
+              return;
+            }
+
+            var sortedRows = response.data.slice().sort(function (a, b) {
+              return Number(b.Year) - Number(a.Year);
+            });
+
+            renderTable(sortedRows);
+          } else {
+            showError('Request failed. Status: ' + xhr.status);
+          }
+        };
+
+        xhr.onerror = function () {
+          showError('Network error while retrieving population data.');
+        };
+
+        xhr.send();
+      }
+
+      window.addEventListener('load', fetchPopulationData);
+    })();
+  </script>
+</body>
+</html>
