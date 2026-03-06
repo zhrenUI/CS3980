@@ -45,6 +45,8 @@ table.
 
 ```
 .
+├── screenshots/
+│   ├── USpop_page_output.png
 ├── index.html 
 └── readme.md
 ```
